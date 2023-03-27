@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Comment Form</title>
+  </head>
+  <body>
+    <h1>Comment Form</h1>
+    <form id="comment-form">
+      <div>
+        <label for="comment">Comment:</label>
+        <input type="text" name="comment" id="comment" required>
+      </div>
+      <div>
+        <label for="photo">Photo:</label>
+        <input type="file" name="photo" id="photo">
+      </div>
+      <div>
+        <label for="location">Location:</label>
+        <button type="button" id="location-btn">Get Location</button>
+        <input type="hidden" name="lat" id="lat">
+        <input type="hidden" name="lng" id="lng">
+      </div>
+      <div>
+        <button type="submit">Submit</button>
+      </div>
+    </form>
+
+    <h1>Comments</h1>
+    <table id="comments-table">
+      <thead>
+        <tr>
+          <th>Comment</th>
+          <th>Photo</th>
+          <th>Location</th>
+        </tr>
+      </thead>
+      <tbody id="comments-tbody">
+      </tbody>
+    </table>
+
+    <script>
+      const form = document.querySelector('#comment-form');
+      const locationBtn = document.querySelector('#location-btn');
+      const latInput = document.querySelector('#lat');
+      const lngInput = document.querySelector('#lng');
+      const commentsTbody = document.querySelector('#comments-tbody');
+
+      locationBtn.addEventListener('click', () => {
+        navigator.geolocation.getCurrentPosition(position => {
+          latInput.value = position.coords.latitude;
+          lngInput.value = position.coords.longitude;
+        }, () => {
+          alert('Could not get current location');
+        });
+      });
+
+      form.addEventListener('submit', async (event) => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+
+        try {
+          const response = await fetch('/api/comments', {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log(data);
+
+          const row = document.createElement('tr');
+          const commentCell = document.createElement('td');
+          commentCell.textContent = data.comment;
+          row.appendChild(commentCell);
+
+          const photoCell = document.createElement('td');
+          if (data.photo) {
+            const photo = document.createElement('img');
+            photo.src = data.photo;
+            photo.width = 100;
+            photoCell.appendChild(photo);
+          }
+          row.appendChild(photoCell);
+
+          const locationCell = document.createElement('td');
+          locationCell.textContent = `${data.lat}, ${data.lng}`;
+          row.appendChild(locationCell);
+
+          commentsTbody.appendChild(row);
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    </script>
+  </body>
+</html>
+
+     
