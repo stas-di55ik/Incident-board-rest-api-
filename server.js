@@ -66,8 +66,8 @@ app.post('/api/comments', upload.single('photo'), (req, res) => {
   const photo = req.file ? `/uploads/${req.file.filename}` : null;
   console.log(`Comment: ${comment}, Lat: ${lat}, Lng: ${lng}, Photo: ${photo}`);
   doOperationsWithDb(comment, lat, lng, photo).then((result) => {
-    const allIncidents = result;
-    allIncidents.forEach(element => {
+      const allIncidents = result;
+      allIncidents.forEach(element => {
       console.log(JSON.stringify(element));
     });
     res.json(allIncidents);
