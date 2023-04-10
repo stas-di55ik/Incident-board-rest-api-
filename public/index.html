@@ -33,45 +33,12 @@
           <th>Comment</th>
           <th>Photo</th>
           <th>Location</th>
-          <th>Map</th>
         </tr>
       </thead>
       <tbody id="comments-tbody">
       </tbody>
     </table>
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB9RGgEo0jF228FcOLIZKEUSknPXswSv0E"></script>
     <script>
-    // create a new map and marker for each comment
-    function createMap(latitude, longitude) {
-      const map = new google.maps.Map(document.createElement('div'), {
-        zoom: 15,
-        center: { lat: latitude, lng: longitude },
-      });
-
-      const marker = new google.maps.Marker({
-        position: { lat: latitude, lng: longitude },
-        map,
-      });
-
-      console.log(map)
-      return map;
-    }
-
-    // create the map column for each comment in the table
-    function createMapCell(lat, long) {
-      const mapDiv = document.createElement('div');
-      mapDiv.style.width = '200px';
-      mapDiv.style.height = '200px';
-
-      const map = createMap(lat, long);
-      mapDiv.appendChild(map.getDiv());
-
-      const mapCell = document.createElement('td');
-      mapCell.appendChild(mapDiv);
-
-      return mapCell;
-    }
-
       const form = document.querySelector('#comment-form');
       const locationBtn = document.querySelector('#location-btn');
       const latInput = document.querySelector('#lat');
@@ -126,9 +93,6 @@
             const locationCell = document.createElement('td');
             locationCell.textContent = `${element.latitude}, ${element.longitude}`;
             row.appendChild(locationCell);
-
-            const mapCell = createMapCell(parseFloat(element.latitude), parseFloat(element.longitude));
-            row.appendChild(mapCell);
 
             commentsTbody.appendChild(row);
           });
