@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Incident Board</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+  <h1>Incident Board</h1>
+  <form id="incidentForm">
+    <label for="comment">Comment:</label>
+    <input type="text" id="comment" name="comment"><br><br>
+    <label for="lat">Latitude:</label>
+    <input type="text" id="lat" name="lat"><br><br>
+    <label for="lng">Longitude:</label>
+    <input type="text" id="lng" name="lng"><br><br>
+    <label for="photo">Photo:</label>
+    <input type="file" id="photo" name="photo"><br><br>
+    <input type="submit" value="Submit">
+  </form>
+
+  <h2>Incident List</h2>
+  <ul id="incidentList"></ul>
+
+  <script>
+    $(document).ready(() => {
+      $('#incidentForm').on('submit', (e) => {
+        e.preventDefault();
+
+        const comment = $('#comment').val();
+        const lat = $('#lat').val();
+        const lng = $('#lng').val();
+        const photo = $('#photo')[0].files[0];
+
+        const formData = new FormData();
+        formData.append('method', 'insertOneIncidentToDb');
+        formData.append('params[comment]', comment);
+        formData.append('params[lat]', lat);
+        formData.append('params[lng]', lng);
+        formData.append('params[photo]', photo);
+
+        // запит на додавання нового запису
+        $.ajax({
+          type: 'POST',
+          url: '/api',
+          data: formData,
+          contentType: false,
+          processData: false,
+          success: (response) => {
+            if (response.error) {
+              console.error(response.error);
+            } else {
+              console.log(response.result);
+              refreshIncidentList(response.result);
+            }
+          },
+          error: (error) => {
+            console.error(error);
+          }
+        });
+
+        // очищення полів
+        $('#comment').val('');
+        $('#lat').val('');
+        $('#lng').val('');
+        $('#photo').val('');
+      });
+
+      // оновлення списку
+      function refreshIncidentList(incidents) {
+        $('#incidentList').empty();
+        incidents.forEach((incident) => {
+          const listItem = $('<li>').text(`Comment: ${incident.comment}, Latitude: ${incident.latitude}, Longitude: ${incident.longitude}, Photo: ${incident.photo}`);
+          $('#incidentList').append(listItem);
+        });
+      }
+
+      // запит на отримання усіх
+      $.ajax({
+        type: 'POST',
+        url: '/api',
+        data: JSON.stringify({
+          jsonrpc: '2.0',
+          method: 'getAllIncidens',
+          id: 1
+        }),
+        contentType: 'application/json',
+        success: (response) => {
+          if (response.error) {
+            console.error(response.error);
+          } else {
+            console.log(response.result);
+            refreshIncidentList(response.result);
+          }
+        },
+        error: (error) => {
+          console.error(error);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
