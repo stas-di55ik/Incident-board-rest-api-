@@ -1,6 +1,7 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
+const { createServer, Server } = require('jsonrpc-lite');
 const app = express();
 const port = 3000;
 
@@ -40,12 +41,6 @@ async function getAllIncidens() {
   }
 }
 
-async function doOperationsWithDb(comment, lat, lng, photo) {
-  await insertOneIncidentToDb(comment, lat, lng, photo);
-  const allIncidents = await getAllIncidens();
-  return allIncidents;
-}
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -61,19 +56,48 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-app.post('/api/comments', upload.single('photo'), (req, res) => {
-  const { comment, lat, lng } = req.body;
-  const photo = req.file ? `/uploads/${req.file.filename}` : null;
-  console.log(`Comment: ${comment}, Lat: ${lat}, Lng: ${lng}, Photo: ${photo}`);
-  doOperationsWithDb(comment, lat, lng, photo).then((result) => {
-      const allIncidents = result;
-      allIncidents.forEach(element => {
-      console.log(JSON.stringify(element));
-    });
-    res.json(allIncidents);
-  });
-});
+// обробка запитів
+app.post('/api', (req, res) => {
+  const rpcRequest = req.body;
+  const { method, params } = rpcRequest;
 
-app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+  // перемикання режиму роботи з бд
+  switch (method) {
+    case 'insertOneIncidentToDb':
+      const { comment, lat, lng, photo } = params;
+      insertOneIncidentToDb(comment, lat, lng, photo)
+        .then((result) => {
+          // відправка відповіді
+          const rpcResponse = createServer().response(rpcRequest.id, null, result);
+          res.json(rpcResponse);
+        })
+        .catch((error) => {
+          // відправка повідомлення про помилку
+          const rpcError = createServer().error(rpcRequest.id, new Error(error.message));
+          res.json(rpcError);
+        });
+      break;
+    case 'getAllIncidens':
+      getAllIncidens()
+        .then((result) => {
+          // відправка відповіді
+          const rpcResponse = createServer().response(rpcRequest.id, null, result);
+          res.json(rpcResponse);
+        })
+        .catch((error) => {
+          // відправка повідомлення про помилку
+            const rpcError = createServer().error(rpcRequest.id, new Error(error.message));
+            res.json(rpcError);
+          });
+      break;
+    default:
+      // відправка повідомлення про помилку у разі неспівпадіння методу для роботи з базою даних
+      const rpcError = createServer().error(rpcRequest.id, new Error('Invalid method name'));
+      res.json(rpcError);
+      break;
+    }
+  });
+          
+  app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
 });
